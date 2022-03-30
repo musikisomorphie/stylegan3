@@ -30,8 +30,9 @@ from metrics import metric_main
 
 def setup_snapshot_image_grid(training_set, random_seed=0):
     rnd = np.random.RandomState(random_seed)
-    gw = np.clip(7680 // training_set.image_shape[2], 7, 32)
-    gh = np.clip(4320 // training_set.image_shape[1], 4, 32)
+    gw, gh = 8, 8
+    # gw = np.clip(7680 // training_set.image_shape[2], 7, 32)
+    # gh = np.clip(4320 // training_set.image_shape[1], 4, 32)
 
     # No labels => show random subset of training samples.
     if not training_set.has_labels:
@@ -75,6 +76,11 @@ def save_image_grid(img, fname, drange, grid_size):
 
     gw, gh = grid_size
     _N, C, H, W = img.shape
+    if C == 6:
+        im0, im1 = img[:_N//2, :3], img[:_N//2, 3:]
+        img = img[:, :3]
+        img[::2], img[1::2] = im0, im1
+        C //= 2
     img = img.reshape([gh, gw, C, H, W])
     img = img.transpose(0, 3, 1, 4, 2)
     img = img.reshape([gh * H, gw * W, C])

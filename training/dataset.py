@@ -216,6 +216,10 @@ class ImageFolderDataset(Dataset):
                 image = pyspng.load(f.read())
             else:
                 image = np.array(PIL.Image.open(f))
+                if 'rxrx19b' in self._path:
+                    col = image.shape[1] // 2
+                    image = np.concatenate((image[:, :col],
+                                            image[:, col:]), axis=-1)
         if image.ndim == 2:
             image = image[:, :, np.newaxis] # HW => HWC
         image = image.transpose(2, 0, 1) # HWC => CHW

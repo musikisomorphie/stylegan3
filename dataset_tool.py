@@ -86,7 +86,7 @@ def open_image_folder(source_dir, *, max_images: Optional[int]):
         for idx, fname in enumerate(input_images):
             arch_fname = os.path.relpath(fname, source_dir)
             arch_fname = arch_fname.replace('\\', '/')
-            img = np.array(PIL.Image.open(fname).convert('RGB'))
+            img = np.array(PIL.Image.open(fname))
             yield dict(img=img, label=labels.get(arch_fname))
             if idx >= max_idx-1:
                 break
@@ -221,7 +221,9 @@ def make_transform(
     def scale(width, height, img):
         w = img.shape[1]
         h = img.shape[0]
-        if width == w and height == h:
+        # or instead of and, used for rxrx19b concated rgb image
+        # i.e. concatenate last 3 channels along width
+        if width == w or height == h:
             return img
         img = PIL.Image.fromarray(img)
         ww = width if width is not None else w
@@ -249,7 +251,7 @@ def make_transform(
         canvas = np.zeros([width, width, 3], dtype=np.uint8)
         canvas[(width - height) // 2 : (width + height) // 2, :] = img
         return canvas
-
+    
     if transform is None:
         return functools.partial(scale, output_width, output_height)
     if transform == 'center-crop':
@@ -427,8 +429,8 @@ def convert_dataset(
             dataset_attrs = cur_image_attrs
             width = dataset_attrs['width']
             height = dataset_attrs['height']
-            if width != height:
-                error(f'Image dimensions after scale and crop are required to be square.  Got {width}x{height}')
+            # if width != height:
+            #     error(f'Image dimensions after scale and crop are required to be square.  Got {width}x{height}')
             if dataset_attrs['channels'] not in [1, 3]:
                 error('Input images must be stored as RGB or grayscale')
             if width != 2 ** int(np.floor(np.log2(width))):
